@@ -78,5 +78,6 @@ class Post(models.Model):
 class TimeEntry(models.Model):
     owner = models.ForeignKey('auth.User', related_name='time_entries', on_delete=models.CASCADE)
     parent = models.ForeignKey('Gask', related_name='time_entries', on_delete=models.CASCADE)
-    start_time = models.DateTimeField(blank=True, null=True)
+    start_time = models.DateTimeField(blank=True, auto_now_add=True)
     end_time = models.DateTimeField(blank=True, null=True)
+

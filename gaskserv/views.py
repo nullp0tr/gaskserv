@@ -1,32 +1,36 @@
-from django.shortcuts import render
 from rest_framework import generics, permissions
 from gaskserv.permissions import *
 from gaskserv.models import *
 from gaskserv.serializers import *
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
-from django.contrib import auth
-from django.views import View
+from django.utils import timezone
+
 
 
 ###############################
 ######## TIME ENTRIAS #########
 
 class TimeEntryDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly)
     queryset = TimeEntry.objects.all()
     serializer_class = TimeEntrySerializer
 
+    def perform_update(self, serializer):
+        serializer.save(end_time=timezone.now())
+
 
 class TimeEntryList(generics.ListCreateAPIView):
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly,)
-    queryset = TimeEntry.objects.all()
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly, HasAllEntriesValid)
     serializer_class = TimeEntrySerializer
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-
+    def get_queryset(self):
+        queryset = TimeEntry.objects.filter(owner=self.request.user)
+        last_entry = self.request.query_params.get('last_entry', None)
+        if last_entry is not None and last_entry == 'true':
+            queryset = queryset.filter(end_time=None)
+        return queryset
 
 #########################
 ######## GASKAS ########
@@ -145,16 +149,3 @@ class ThreadList(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
-
-class LoginView(View):
-    def get(self, request, *args, **kwargs):
-        user = auth.authenticate(
-            username=request.POST.get('username'),
-            password=request.POST.get('password'))
-
-        # return whatever you want on failure
-        if not user or not user.is_active:
-            return HttpResponse(status=500)
-
-        auth.login(request, user)
-        return HttpResponse('OK')

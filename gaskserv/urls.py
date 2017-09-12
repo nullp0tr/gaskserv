@@ -8,6 +8,7 @@ urlpatterns = [
 
     url(r'^timed/$', views.TimeEntryList.as_view()),
     url(r'^timed/(?P<pk>[0-9]+)/$', views.TimeEntryDetail.as_view()),
+    url(r'^timed/(?P<last_entry>.+)/$', views.TimeEntryDetail.as_view()),
 
     url(r'^users/$', views.UserList.as_view()),
     url(r'^users/(?P<pk>[0-9]+)/$', views.UserDetail.as_view()),
@@ -26,8 +27,6 @@ urlpatterns = [
 
     url(r'^threads/$', views.ThreadList.as_view()),
     url(r'^threads/(?P<pk>[0-9]+)/$', views.ThreadDetail.as_view()),
-
-    url(r'^login/$', views.LoginView.as_view()),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

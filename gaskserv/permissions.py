@@ -1,5 +1,6 @@
 from rest_framework import permissions
 from rest_framework import compat
+from gaskserv.models import TimeEntry
 
 class IsAuthenticated(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -12,6 +13,13 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
             return True
 
         return obj.owner == request.user
+
+class HasAllEntriesValid(permissions.BasePermission):
+    def has_permission(self, request, view):
+        has_unfinished_time_entries = TimeEntry.objects.filter(end_time=None, owner=request.user.id)
+        if has_unfinished_time_entries and request.method == 'POST':
+            return False
+        return True
 
 class IsMemberOrOwnerOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):

@@ -45,11 +45,10 @@ class ProjectSerializer(AbstractMetaDataSerializer):
 
 class TimeEntrySerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.username')
-    parent = serializers.StringRelatedField(source='parent.title')
 
     class Meta:
         model = TimeEntry
-        fields = ('start_time', 'end_time', 'parent', 'owner')
+        fields = ('start_time', 'end_time', 'parent', 'owner', 'id')
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -58,7 +57,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'password', 'email', 'gasks', 'first_name', 'last_name')
+        fields = ('id', 'username', 'password', 'email', 'gasks', 'first_name', 'last_name', 'time_entries')
         extra_kwargs = {
             'password': {'write_only': True},
             'gasks': {'read_only': True}
