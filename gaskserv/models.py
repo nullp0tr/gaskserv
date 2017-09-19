@@ -13,14 +13,10 @@ class AbstractMetaDataModel(models.Model):
         abstract = True
 
 
-# ALREADY HAS VIEW
-#ALREADY HAS SERIALIZER
 class Team(AbstractMetaDataModel):
     members = models.ManyToManyField('auth.User', related_name='teams')
 
 
-#ALREADY HAS VIEW
-#ALREADY HAS SERIALIZER
 class Project(AbstractMetaDataModel):
     teams = models.ManyToManyField('Team', related_name='projects', null=True, blank=True)
     owner = models.ForeignKey('auth.User', related_name='projects')
@@ -39,8 +35,6 @@ class AbstractRootObjectModel(AbstractMetaDataModel):
         abstract = True
 
 
-#ALREADY HAS VIEW
-#ALREADY HAS SERIALIZER
 class Gask(AbstractRootObjectModel):
     project = models.ForeignKey('Project', related_name='gasks', on_delete=models.CASCADE)
     owner = models.ForeignKey('auth.User', related_name='gasks', on_delete=models.CASCADE)
@@ -50,22 +44,16 @@ class Gask(AbstractRootObjectModel):
         return self.title
 
 
-#ALREADY HAS VIEW
-#ALREADY HAS SERIALIZER
 class Issue(AbstractRootObjectModel):
     project = models.ForeignKey('Project', related_name='issues', on_delete=models.CASCADE)
     owner = models.ForeignKey('auth.User', related_name='issues', on_delete=models.CASCADE)
 
 
-#ALREADY HAS VIEW
-#ALREADY HAS SERIALIZER
 class Thread(AbstractRootObjectModel):
     project = models.ForeignKey('Project', related_name='threads', on_delete=models.CASCADE)
     owner = models.ForeignKey('auth.User', related_name='threads', on_delete=models.CASCADE)
 
 
-#ALREADY HAS VIEW
-#ALREADY HAS SERIALIZER
 class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, blank=True)
     owner = models.ForeignKey('auth.User', related_name='posts', on_delete=models.CASCADE)
@@ -73,11 +61,8 @@ class Post(models.Model):
     post_body = models.CharField(max_length=256, blank=True)
 
 
-#ALREADY HAS VIEW
-#ALREADY HAS SERIALIZER
 class TimeEntry(models.Model):
     owner = models.ForeignKey('auth.User', related_name='time_entries', on_delete=models.CASCADE)
     parent = models.ForeignKey('Gask', related_name='time_entries', on_delete=models.CASCADE)
     start_time = models.DateTimeField(blank=True, auto_now_add=True)
     end_time = models.DateTimeField(blank=True, null=True)
-

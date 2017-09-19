@@ -1,13 +1,8 @@
-from rest_framework import generics, permissions
+from rest_framework import generics
 from gaskserv.permissions import *
-from gaskserv.models import *
 from gaskserv.serializers import *
 from django.utils import timezone
 
-
-
-###############################
-######## TIME ENTRIAS #########
 
 class TimeEntryDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly)
@@ -32,9 +27,6 @@ class TimeEntryList(generics.ListCreateAPIView):
             queryset = queryset.filter(end_time=None)
         return queryset
 
-#########################
-######## GASKAS ########
-
 
 class GaskDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly,)
@@ -51,9 +43,6 @@ class GaskList(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-#########################
-######## USERAS #########
-
 class UserList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -64,8 +53,35 @@ class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserSerializer
 
 
-########################
-####### POSTAS #########
+class MeUserDetail(generics.RetrieveUpdateDestroyAPIView):
+    def get_object(self):
+        self.serializer_class = UserSerializer
+        self.queryset = User.objects.all()
+        last_entry = self.request.query_params.get('last_entry', None)
+        if last_entry != 'true':
+            queryset = self.filter_queryset(self.get_queryset())
+            obj = queryset.get(pk=self.request.user.id)
+            return obj
+        else:
+            self.permission_classes = (IsEntryValidForEnd,)
+            self.serializer_class = TimeEntrySerializer
+            print('first here')
+            queryset = TimeEntry.objects.filter(owner=self.request.user)
+            self.queryset = queryset
+            try:
+                obj = queryset.latest('id')
+            except models.ObjectDoesNotExist:
+                self.serializer_class = serializers.Serializer
+                return None
+            self.check_object_permissions(self.request, obj)
+            return obj
+
+    def perform_update(self, serializer):
+        if self.request.query_params.get('last_entry', None) == 'true':
+            obj = self.get_object()
+            if self.get_object().end_time is None and obj is not None:
+                serializer.save(end_time=timezone.now())
+
 
 class PostDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly,)
@@ -82,9 +98,6 @@ class PostList(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-##########################
-####### PROJECTS #########
-
 class ProjectDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsMemberOrOwnerOrReadOnly,)
     queryset = Project.objects.all()
@@ -100,9 +113,6 @@ class ProjectList(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-##########################
-######## TEAMS ###########
-
 class TeamDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     queryset = Team.objects.all()
@@ -114,9 +124,6 @@ class TeamList(generics.ListCreateAPIView):
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
 
-
-##########################
-######## ISSUES ##########
 
 class IssueDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly,)
@@ -132,9 +139,6 @@ class IssueList(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-
-##########################
-######## THREADS #########
 
 class ThreadDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly,)

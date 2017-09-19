@@ -1,7 +1,27 @@
-from rest_framework import serializers
-from gaskserv.models import *
 from django.contrib.auth.models import User
+from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+
+from gaskserv.models import *
+
+
+class GaskRelatedField(serializers.RelatedField):
+    def to_representation(self, value):
+
+        if isinstance(value, Gask):
+            return GaskSerializer(value).data
+
+        elif isinstance(value, Issue):
+            return IssueSerializer(value).data
+
+        elif isinstance(value, Thread):
+            return ThreadSerializer(value).data
+
+        elif isinstance(value, TimeEntry):
+            return TimeEntrySerializer(value).data
+
+        else:
+            raise Exception('UnexpectedTypeToSerialize')
 
 
 class ContentTypeField(serializers.Field):
@@ -13,15 +33,13 @@ class ContentTypeField(serializers.Field):
     def to_representation(self, value):
         return value.model
 
+
 class AbstractMetaDataSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('title', 'status', 'description', 'created_at')
 
 
 class ProjectSerializer(AbstractMetaDataSerializer):
-    # gasks = serializers.PrimaryKeyRelatedField(many=True, queryset=Gask.objects.exclude(object_id__isnull=False))
-    # issues = serializers.PrimaryKeyRelatedField(many=True, queryset=Issue.objects.exclude(object_id__isnull=False))
-    # threads = serializers.PrimaryKeyRelatedField(many=True, queryset=Thread.objects.exclude(object_id__isnull=False))
     owner = serializers.ReadOnlyField(source='owner.username')
 
     gasks = serializers.SerializerMethodField()
@@ -29,7 +47,6 @@ class ProjectSerializer(AbstractMetaDataSerializer):
     threads = serializers.SerializerMethodField()
 
     def get_gasks(self, obj):
-
         return Gask.objects.filter(project=obj).exclude(object_id__isnull=False).values_list('pk', flat=True)
 
     def get_issues(self, obj):
@@ -54,6 +71,7 @@ class TimeEntrySerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     gasks = serializers.PrimaryKeyRelatedField(many=True, queryset=Gask.objects.all())
     email = serializers.EmailField(validators=[UniqueValidator(queryset=User.objects.all())])
+    time_entries = GaskRelatedField(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -77,26 +95,6 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-class GaskRelatedField(serializers.RelatedField):
-    def to_representation(self, value):
-
-        if isinstance(value, Gask):
-            return GaskSerializer(value).data
-
-        elif isinstance(value, Issue):
-            return IssueSerializer(value).data
-
-        elif isinstance(value, Thread):
-            return ThreadSerializer(value).data
-
-        elif isinstance(value, TimeEntry):
-            return TimeEntrySerializer(value).data
-
-        else:
-            raise Exception('UnexpectedTypeToSerialize')
-
-
-
 class AbstractRootObjectSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.username')
     gasks = serializers.PrimaryKeyRelatedField(many=True, queryset=Gask.objects.all())
@@ -105,7 +103,9 @@ class AbstractRootObjectSerializer(serializers.ModelSerializer):
     content_type = ContentTypeField()
 
     class Meta:
-        fields = ('owner', 'id', 'status', 'title', 'description', 'created_at', 'gasks', 'issues', 'threads', 'project', 'content_type', 'object_id')
+        fields = (
+            'owner', 'id', 'status', 'title', 'description', 'created_at', 'gasks', 'issues', 'threads', 'project',
+            'content_type', 'object_id')
 
 
 class GaskSerializer(AbstractRootObjectSerializer):
